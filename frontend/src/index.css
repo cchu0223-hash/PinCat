@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --paper: #fdf6e3;
+    --ink: #3d2e0e;
+  }
+  .dark {
+    --paper: #141009;
+    --ink: #f5edd8;
+  }
+  body {
+    @apply bg-warm-bg dark:bg-warm-bgDark text-warm-ink dark:text-warm-inkDark font-sans;
+    min-height: 100vh;
+  }
+  * {
+    box-sizing: border-box;
+  }
+}
+
+@layer utilities {
+  .font-hand {
+    font-family: 'Caveat', cursive;
+  }
+  .font-hand-bold {
+    font-family: 'Caveat Brush', cursive;
+  }
+  .bg-paper {
+    background-color: var(--paper);
+  }
+  .text-ink {
+    color: var(--ink);
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #c9a96e;
+  border-radius: 3px;
+}
+
+/* Tape/sticker animations */
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(2deg); }
+}
+.wiggle-hover:hover {
+  animation: wiggle 0.3s ease-in-out infinite;
+}
