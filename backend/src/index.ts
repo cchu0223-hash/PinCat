@@ -14,7 +14,21 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
 const PORT = process.env.PORT || 3001
 
-app.use(cors({ origin: 'http://localhost:5173' }))
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://pin-cat.vercel.app',
+  process.env.FRONTEND_URL,
+].filter(Boolean) as string[]
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.some(o => origin.startsWith(o))) {
+      callback(null, true)
+    } else {
+      callback(new Error(`CORS blocked: ${origin}`))
+    }
+  },
+}))
 app.use(express.json())
 
 // API routes
