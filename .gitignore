@@ -3,5 +3,9 @@ dist/
 .env
 *.local
 .DS_Store
+._*
+.AppleDouble
+.LSOverride
 uploads/
 *.log
+.claude/
