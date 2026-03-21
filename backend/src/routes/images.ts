@@ -55,7 +55,8 @@ router.post('/', upload.single('image'), async (req, res) => {
     const weekKey = dateToWeekKey(date)
     const rotation = (Math.random() - 0.5) * 12
     const decoration = DECORATIONS[Math.floor(Math.random() * DECORATIONS.length)]
-    const imageUrl = `/api/images/file/${req.file.filename}`
+    const backendBase = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 3001}`
+    const imageUrl = `${backendBase}/api/images/file/${req.file.filename}`
 
     await db.insert(images).values({
       id: imageId,
