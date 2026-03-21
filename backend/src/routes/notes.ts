@@ -11,9 +11,8 @@ router.put('/:weekKey', async (req, res) => {
     const { weekKey } = req.params
     const { content } = req.body
 
-    const existing = await db.query.weekNotes.findFirst({
-      where: eq(weekNotes.weekKey, weekKey),
-    })
+    const rows = await db.select().from(weekNotes).where(eq(weekNotes.weekKey, weekKey)).limit(1)
+    const existing = rows[0] ?? null
 
     if (existing) {
       await db

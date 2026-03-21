@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { db } from '../db/index.js'
 import { images, terms, weekNotes } from '../db/schema.js'
-import { eq, inArray } from 'drizzle-orm'
+import { eq, inArray, and, lte, gte } from 'drizzle-orm'
 import { getWeekBounds } from '../lib/weekUtils.js'
 
 const router = Router()
@@ -45,9 +45,12 @@ router.get('/:weekKey', async (req, res) => {
       createdAt: img.createdAt.toISOString(),
     }))
 
-    const note = await db.query.weekNotes.findFirst({
-      where: eq(weekNotes.weekKey, weekKey),
-    })
+    const noteRows = await db
+      .select()
+      .from(weekNotes)
+      .where(eq(weekNotes.weekKey, weekKey))
+      .limit(1)
+    const note = noteRows[0] ?? null
 
     const [, weekPart] = weekKey.split('-W')
 

@@ -116,9 +116,8 @@ router.get('/file/:filename', async (req, res) => {
 // Delete image
 router.delete('/:id', async (req, res) => {
   try {
-    const image = await db.query.images.findFirst({
-      where: eq(images.id, req.params.id),
-    })
+    const imageRows = await db.select().from(images).where(eq(images.id, req.params.id)).limit(1)
+    const image = imageRows[0] ?? null
     if (!image) return res.status(404).json({ error: 'Not found' })
 
     await db.delete(images).where(eq(images.id, req.params.id))
@@ -139,9 +138,8 @@ router.delete('/:id', async (req, res) => {
 // Regenerate terms
 router.post('/:id/regenerate', async (req, res) => {
   try {
-    const image = await db.query.images.findFirst({
-      where: eq(images.id, req.params.id),
-    })
+    const imageRows2 = await db.select().from(images).where(eq(images.id, req.params.id)).limit(1)
+    const image = imageRows2[0] ?? null
     if (!image) return res.status(404).json({ error: 'Not found' })
 
     const filename = image.imageUrl.split('/').pop()!
@@ -161,9 +159,7 @@ router.post('/:id/regenerate', async (req, res) => {
       await db.insert(terms).values(termRecords)
     }
 
-    const newTerms = await db.query.terms.findMany({
-      where: eq(terms.imageId, req.params.id),
-    })
+    const newTerms = await db.select().from(terms).where(eq(terms.imageId, req.params.id))
 
     res.json({
       ...image,
