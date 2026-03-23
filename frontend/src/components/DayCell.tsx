@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Loader } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { ImageEntry } from '../types'
 import { ImageCard } from './ImageCard'
@@ -116,22 +115,15 @@ export const DayCell: React.FC<DayCellProps> = ({
         ))}
       </div>
 
-      {/* Bottom hint / loading */}
+      {/* Bottom hint */}
       <div className="flex-1 flex items-end justify-center pb-2 select-none pointer-events-none">
-        {uploading ? (
-          <div className="flex items-center gap-1.5 text-amber-500">
-            <Loader size={13} className="animate-spin" />
-            <span className="font-hand text-sm">analyzing...</span>
-          </div>
-        ) : (
-          <span className={cn(
-            'font-hand text-xs transition-opacity duration-300',
-            isHovered ? 'opacity-35' : 'opacity-10',
-            'text-amber-600 dark:text-amber-400'
-          )}>
-            paste · drop · click
-          </span>
-        )}
+        <span className={cn(
+          'font-hand text-xs transition-opacity duration-300',
+          isHovered ? 'opacity-35' : 'opacity-10',
+          'text-amber-600 dark:text-amber-400'
+        )}>
+          paste · drop · click
+        </span>
       </div>
 
       {/* Drag highlight overlay */}

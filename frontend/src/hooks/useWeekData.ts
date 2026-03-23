@@ -27,12 +27,34 @@ export function useWeekData(weekKey: string) {
   }, [fetchData])
 
   const handleUpload = useCallback(async (file: File, date: string) => {
-    const newImage = await uploadImage(file, date)
-    setData(prev => {
-      if (!prev) return prev
-      return { ...prev, images: [...prev.images, newImage] }
-    })
-    return newImage
+    const tempId = `temp-${Date.now()}`
+    const previewUrl = URL.createObjectURL(file)
+    const decorations = ['tape-yellow', 'tape-blue', 'tape-washi', 'pin-red', 'pin-yellow', 'clip'] as const
+    const optimistic: ImageEntry = {
+      id: tempId,
+      date,
+      imageUrl: previewUrl,
+      terms: [],
+      rotation: (Math.random() - 0.5) * 12,
+      decoration: decorations[Math.floor(Math.random() * decorations.length)],
+      createdAt: new Date().toISOString(),
+      analysing: true,
+    }
+    setData(prev => prev ? { ...prev, images: [...prev.images, optimistic] } : prev)
+
+    try {
+      const newImage = await uploadImage(file, date)
+      URL.revokeObjectURL(previewUrl)
+      setData(prev => {
+        if (!prev) return prev
+        return { ...prev, images: prev.images.map(img => img.id === tempId ? newImage : img) }
+      })
+      return newImage
+    } catch (err) {
+      URL.revokeObjectURL(previewUrl)
+      setData(prev => prev ? { ...prev, images: prev.images.filter(img => img.id !== tempId) } : prev)
+      throw err
+    }
   }, [])
 
   const handleDeleteImage = useCallback(async (imageId: string) => {

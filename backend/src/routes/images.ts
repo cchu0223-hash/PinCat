@@ -1,8 +1,8 @@
 import { Router } from 'express'
 import multer from 'multer'
-import path from 'path'
 import { v4 as uuidv4 } from 'uuid'
-import fs from 'fs/promises'
+import { v2 as cloudinary } from 'cloudinary'
+import { Readable } from 'stream'
 import { db } from '../db/index.js'
 import { images, terms } from '../db/schema.js'
 import { eq } from 'drizzle-orm'
@@ -12,21 +12,10 @@ import 'dotenv/config'
 
 const router = Router()
 
-const uploadDir = process.env.UPLOAD_DIR || './uploads'
-
-const storage = multer.diskStorage({
-  destination: async (req, file, cb) => {
-    await fs.mkdir(uploadDir, { recursive: true })
-    cb(null, uploadDir)
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname) || '.jpg'
-    cb(null, `${uuidv4()}${ext}`)
-  },
-})
+// Cloudinary auto-configures from CLOUDINARY_URL env var
 
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
@@ -38,6 +27,19 @@ const upload = multer({
 })
 
 const DECORATIONS = ['tape-yellow', 'tape-blue', 'tape-washi', 'pin-red', 'pin-yellow', 'clip'] as const
+
+function uploadToCloudinary(buffer: Buffer, mimeType: string): Promise<{ secure_url: string; public_id: string }> {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: 'pincat', resource_type: 'image' },
+      (error, result) => {
+        if (error || !result) return reject(error ?? new Error('Upload failed'))
+        resolve(result)
+      }
+    )
+    Readable.from(buffer).pipe(stream)
+  })
+}
 
 // Upload image
 router.post('/', upload.single('image'), async (req, res) => {
@@ -51,12 +53,12 @@ router.post('/', upload.single('image'), async (req, res) => {
       return res.status(400).json({ error: 'Date is required' })
     }
 
+    const { secure_url: imageUrl } = await uploadToCloudinary(req.file.buffer, req.file.mimetype)
+
     const imageId = uuidv4()
     const weekKey = dateToWeekKey(date)
     const rotation = (Math.random() - 0.5) * 12
     const decoration = DECORATIONS[Math.floor(Math.random() * DECORATIONS.length)]
-    const backendBase = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 3001}`
-    const imageUrl = `${backendBase}/api/images/file/${req.file.filename}`
 
     await db.insert(images).values({
       id: imageId,
@@ -67,11 +69,9 @@ router.post('/', upload.single('image'), async (req, res) => {
       decoration,
     })
 
-    // Generate terms — await so response includes terms
-    const imagePath = req.file.path
     let termList: { id: string; term: string; imageId: string }[] = []
     try {
-      const generatedTerms = await generateDesignTerms(imagePath)
+      const generatedTerms = await generateDesignTerms(req.file.buffer, req.file.mimetype)
       console.log(`Generated ${generatedTerms.length} terms for image ${imageId}:`, generatedTerms)
       const termRecords = generatedTerms.map(term => ({
         id: uuidv4(),
@@ -86,7 +86,7 @@ router.post('/', upload.single('image'), async (req, res) => {
       console.error('Failed to generate terms:', err)
     }
 
-    const newImage = {
+    res.json({
       id: imageId,
       date,
       weekKey,
@@ -95,22 +95,10 @@ router.post('/', upload.single('image'), async (req, res) => {
       decoration,
       terms: termList,
       createdAt: new Date().toISOString(),
-    }
-
-    res.json(newImage)
+    })
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: 'Upload failed' })
-  }
-})
-
-// Serve uploaded files
-router.get('/file/:filename', async (req, res) => {
-  try {
-    const filePath = path.join(process.cwd(), uploadDir, req.params.filename)
-    res.sendFile(filePath)
-  } catch {
-    res.status(404).json({ error: 'File not found' })
   }
 })
 
@@ -123,10 +111,14 @@ router.delete('/:id', async (req, res) => {
 
     await db.delete(images).where(eq(images.id, req.params.id))
 
-    // Delete file
+    // Delete from Cloudinary
     try {
-      const filename = image.imageUrl.split('/').pop()!
-      await fs.unlink(path.join(process.cwd(), uploadDir, filename))
+      const urlParts = image.imageUrl.split('/')
+      const filenameWithExt = urlParts[urlParts.length - 1]
+      const filename = filenameWithExt.replace(/\.[^.]+$/, '')
+      const folderIndex = urlParts.indexOf('pincat')
+      const publicId = folderIndex >= 0 ? `pincat/${filename}` : filename
+      await cloudinary.uploader.destroy(publicId)
     } catch {}
 
     res.json({ success: true })
@@ -143,14 +135,13 @@ router.post('/:id/regenerate', async (req, res) => {
     const image = imageRows2[0] ?? null
     if (!image) return res.status(404).json({ error: 'Not found' })
 
-    const filename = image.imageUrl.split('/').pop()!
-    const imagePath = path.join(process.cwd(), uploadDir, filename)
+    const fetchRes = await fetch(image.imageUrl)
+    const buffer = Buffer.from(await fetchRes.arrayBuffer())
+    const mimeType = fetchRes.headers.get('content-type') || 'image/jpeg'
 
-    // Delete existing terms
     await db.delete(terms).where(eq(terms.imageId, req.params.id))
 
-    // Regenerate
-    const generatedTerms = await generateDesignTerms(imagePath)
+    const generatedTerms = await generateDesignTerms(buffer, mimeType)
     const termRecords = generatedTerms.map(term => ({
       id: uuidv4(),
       imageId: req.params.id,

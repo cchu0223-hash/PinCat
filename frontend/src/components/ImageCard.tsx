@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Trash2, X } from 'lucide-react'
+import { Trash2, X, Loader } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { ImageEntry, DesignTerm } from '../types'
 import { Decoration } from './Decoration'
@@ -41,7 +41,7 @@ export const ImageCard: React.FC<ImageCardProps> = ({ image, onDelete, onDeleteT
     >
       {/* First term badge above — only in resting state */}
       <AnimatePresence>
-        {!hovered && image.terms.length > 0 && (
+        {!hovered && !image.analysing && image.terms.length > 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -82,9 +82,28 @@ export const ImageCard: React.FC<ImageCardProps> = ({ image, onDelete, onDeleteT
           />
         </div>
 
+        {/* Analysing overlay */}
+        <AnimatePresence>
+          {hovered && image.analysing && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="absolute inset-x-1.5 top-1.5 bottom-5 flex items-center justify-center rounded-sm"
+              style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.18) 55%, transparent 100%)' }}
+            >
+              <div className="flex items-center gap-1.5 text-white/80">
+                <Loader size={11} className="animate-spin" />
+                <span className="font-hand text-xs">analysing</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Terms overlay — gradient + chips inside the polaroid on hover */}
         <AnimatePresence>
-          {hovered && image.terms.length > 0 && (
+          {hovered && !image.analysing && image.terms.length > 0 && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

@@ -1,5 +1,3 @@
-import fs from 'fs/promises'
-import path from 'path'
 import 'dotenv/config'
 
 const API_BASE = process.env.GEMINI_API_BASE || 'https://hiapi.online/v1'
@@ -20,15 +18,8 @@ Focus on:
 Respond ONLY with a JSON array of strings, no explanation. Example:
 ["negative space", "typographic hierarchy", "swiss style", "complementary contrast"]`
 
-export async function generateDesignTerms(imagePath: string): Promise<string[]> {
-  const imageBuffer = await fs.readFile(imagePath)
-  const base64Image = imageBuffer.toString('base64')
-  const ext = path.extname(imagePath).toLowerCase()
-  const mimeType =
-    ext === '.png' ? 'image/png'
-    : ext === '.gif' ? 'image/gif'
-    : ext === '.webp' ? 'image/webp'
-    : 'image/jpeg'
+export async function generateDesignTerms(buffer: Buffer, mimeType: string): Promise<string[]> {
+  const base64Image = buffer.toString('base64')
 
   const response = await fetch(`${API_BASE}/chat/completions`, {
     method: 'POST',

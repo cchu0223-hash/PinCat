@@ -14,6 +14,7 @@ export interface ImageEntry {
   decoration: 'tape-yellow' | 'tape-blue' | 'tape-washi' | 'pin-red' | 'pin-yellow' | 'clip'
   note?: string
   createdAt: string
+  analysing?: boolean
 }
 
 export interface WeekNote {
