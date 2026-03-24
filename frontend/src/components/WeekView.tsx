@@ -96,6 +96,19 @@ export const WeekView: React.FC<WeekViewProps> = ({
       <div className="mt-2">
         <NotesArea content={noteContent} onSave={onSaveNote} />
       </div>
+
+      {/* Footer */}
+      <div className="mt-8 pb-6 flex justify-center">
+        <span className="font-hand text-xs text-amber-500/50 dark:text-amber-400/35">
+          作者 Sissy · 欢迎讨论～{' '}
+          <a
+            href="mailto:cchu0223@gmail.com"
+            className="hover:text-amber-500 dark:hover:text-amber-400 transition-colors"
+          >
+            cchu0223@gmail.com
+          </a>
+        </span>
+      </div>
     </div>
   )
 }
