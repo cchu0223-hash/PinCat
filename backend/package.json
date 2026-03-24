@@ -11,6 +11,7 @@
     "db:push": "drizzle-kit push"
   },
   "dependencies": {
+    "@clerk/backend": "^3.2.2",
     "@clerk/express": "^2.0.6",
     "@google/generative-ai": "^0.17.1",
     "cloudinary": "^2.9.0",

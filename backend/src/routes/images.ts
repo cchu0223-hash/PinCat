@@ -3,7 +3,7 @@ import multer from 'multer'
 import { v4 as uuidv4 } from 'uuid'
 import { v2 as cloudinary } from 'cloudinary'
 import { Readable } from 'stream'
-import { requireAuth, getAuth } from '@clerk/express'
+import { requireAuth } from '../middleware/auth.js'
 import { db } from '../db/index.js'
 import { images, terms } from '../db/schema.js'
 import { eq, and } from 'drizzle-orm'
@@ -45,7 +45,7 @@ function uploadToCloudinary(buffer: Buffer, mimeType: string): Promise<{ secure_
 // Upload image
 router.post('/', requireAuth(), upload.single('image'), async (req, res) => {
   try {
-    const { userId } = getAuth(req)
+    const userId = (req as any).userId as string
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' })
     }
@@ -108,7 +108,7 @@ router.post('/', requireAuth(), upload.single('image'), async (req, res) => {
 // Delete image
 router.delete('/:id', requireAuth(), async (req, res) => {
   try {
-    const { userId } = getAuth(req)
+    const userId = (req as any).userId as string
     const imageRows = await db.select().from(images)
       .where(and(eq(images.id, req.params.id), eq(images.userId, userId!)))
       .limit(1)
@@ -137,7 +137,7 @@ router.delete('/:id', requireAuth(), async (req, res) => {
 // Regenerate terms
 router.post('/:id/regenerate', requireAuth(), async (req, res) => {
   try {
-    const { userId } = getAuth(req)
+    const userId = (req as any).userId as string
     const imageRows2 = await db.select().from(images)
       .where(and(eq(images.id, req.params.id), eq(images.userId, userId!)))
       .limit(1)

@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { requireAuth, getAuth } from '@clerk/express'
+import { requireAuth } from '../middleware/auth.js'
 import { db } from '../db/index.js'
 import { images, terms, weekNotes } from '../db/schema.js'
 import { eq, inArray, and } from 'drizzle-orm'
@@ -9,7 +9,7 @@ const router = Router()
 
 router.get('/:weekKey', requireAuth(), async (req, res) => {
   try {
-    const { userId } = getAuth(req)
+    const userId = (req as any).userId as string
     const { weekKey } = req.params
     const { start, end } = getWeekBounds(weekKey)
 

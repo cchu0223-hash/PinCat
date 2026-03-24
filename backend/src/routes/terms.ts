@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { requireAuth } from '@clerk/express'
+import { requireAuth } from '../middleware/auth.js'
 import { db } from '../db/index.js'
 import { terms } from '../db/schema.js'
 import { eq } from 'drizzle-orm'
