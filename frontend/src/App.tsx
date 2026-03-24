@@ -60,7 +60,27 @@ function App() {
     <>
       <SignedOut>
         <div className="min-h-screen flex items-center justify-center bg-warm-bg dark:bg-warm-bgDark">
-          <SignIn />
+          <SignIn
+            appearance={{
+              variables: {
+                colorPrimary: '#d97706',
+                colorBackground: '#fffbf0',
+                colorText: '#78350f',
+                colorInputBackground: '#fef3c7',
+                colorInputText: '#78350f',
+                borderRadius: '0.75rem',
+                fontFamily: 'inherit',
+              },
+              elements: {
+                card: 'shadow-xl border border-amber-200',
+                headerTitle: 'text-amber-800 font-hand-bold text-2xl',
+                headerSubtitle: 'text-amber-600',
+                socialButtonsBlockButton: 'border-amber-300 hover:bg-amber-50',
+                formButtonPrimary: 'bg-amber-500 hover:bg-amber-600',
+                footerActionLink: 'text-amber-600 hover:text-amber-700',
+              },
+            }}
+          />
         </div>
       </SignedOut>
       <SignedIn>

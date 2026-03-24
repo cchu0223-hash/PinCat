@@ -1,6 +1,7 @@
 import React from 'react'
 import { ChevronLeft, ChevronRight, Sun, Moon, BookOpen } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { UserButton } from '@clerk/clerk-react'
 import { cn } from '../lib/utils'
 import { getWeekDates, formatWeekRange, getPrevWeek, getNextWeek } from '../lib/utils'
 
@@ -62,15 +63,24 @@ export const Navigation: React.FC<NavigationProps> = ({
           </motion.button>
         </div>
 
-        {/* Dark mode toggle */}
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={onToggleDark}
-          className="w-8 h-8 rounded-full flex items-center justify-center bg-amber-100 dark:bg-amber-900/40 hover:bg-amber-200 dark:hover:bg-amber-800/60 text-amber-700 dark:text-amber-300 transition-colors"
-        >
-          {dark ? <Sun size={16} /> : <Moon size={16} />}
-        </motion.button>
+        {/* Right controls */}
+        <div className="flex items-center gap-2">
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={onToggleDark}
+            className="w-8 h-8 rounded-full flex items-center justify-center bg-amber-100 dark:bg-amber-900/40 hover:bg-amber-200 dark:hover:bg-amber-800/60 text-amber-700 dark:text-amber-300 transition-colors"
+          >
+            {dark ? <Sun size={16} /> : <Moon size={16} />}
+          </motion.button>
+          <UserButton
+            appearance={{
+              elements: {
+                avatarBox: 'w-8 h-8',
+              },
+            }}
+          />
+        </div>
       </div>
     </div>
   )
