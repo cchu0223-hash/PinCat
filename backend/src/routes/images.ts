@@ -3,9 +3,10 @@ import multer from 'multer'
 import { v4 as uuidv4 } from 'uuid'
 import { v2 as cloudinary } from 'cloudinary'
 import { Readable } from 'stream'
+import { requireAuth, getAuth } from '@clerk/express'
 import { db } from '../db/index.js'
 import { images, terms } from '../db/schema.js'
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 import { generateDesignTerms } from '../lib/gemini.js'
 import { dateToWeekKey } from '../lib/weekUtils.js'
 import 'dotenv/config'
@@ -42,8 +43,9 @@ function uploadToCloudinary(buffer: Buffer, mimeType: string): Promise<{ secure_
 }
 
 // Upload image
-router.post('/', upload.single('image'), async (req, res) => {
+router.post('/', requireAuth(), upload.single('image'), async (req, res) => {
   try {
+    const { userId } = getAuth(req)
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' })
     }
@@ -62,6 +64,7 @@ router.post('/', upload.single('image'), async (req, res) => {
 
     await db.insert(images).values({
       id: imageId,
+      userId: userId!,
       date,
       weekKey,
       imageUrl,
@@ -103,9 +106,12 @@ router.post('/', upload.single('image'), async (req, res) => {
 })
 
 // Delete image
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAuth(), async (req, res) => {
   try {
-    const imageRows = await db.select().from(images).where(eq(images.id, req.params.id)).limit(1)
+    const { userId } = getAuth(req)
+    const imageRows = await db.select().from(images)
+      .where(and(eq(images.id, req.params.id), eq(images.userId, userId!)))
+      .limit(1)
     const image = imageRows[0] ?? null
     if (!image) return res.status(404).json({ error: 'Not found' })
 
@@ -129,9 +135,12 @@ router.delete('/:id', async (req, res) => {
 })
 
 // Regenerate terms
-router.post('/:id/regenerate', async (req, res) => {
+router.post('/:id/regenerate', requireAuth(), async (req, res) => {
   try {
-    const imageRows2 = await db.select().from(images).where(eq(images.id, req.params.id)).limit(1)
+    const { userId } = getAuth(req)
+    const imageRows2 = await db.select().from(images)
+      .where(and(eq(images.id, req.params.id), eq(images.userId, userId!)))
+      .limit(1)
     const image = imageRows2[0] ?? null
     if (!image) return res.status(404).json({ error: 'Not found' })
 

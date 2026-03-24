@@ -1,39 +1,47 @@
 import axios from 'axios'
+import { useAuth } from '@clerk/clerk-react'
 import { ImageEntry, WeekData, WeekNote } from '../types'
 
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? '/api',
-})
+const baseURL = import.meta.env.VITE_API_URL ?? '/api'
 
-export async function getWeekData(weekKey: string): Promise<WeekData> {
-  const { data } = await api.get(`/weeks/${weekKey}`)
-  return data
-}
+export function useApi() {
+  const { getToken } = useAuth()
 
-export async function uploadImage(file: File, date: string): Promise<ImageEntry> {
-  const formData = new FormData()
-  formData.append('image', file)
-  formData.append('date', date)
-  const { data } = await api.post('/images', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
+  const authAxios = axios.create({ baseURL })
+
+  authAxios.interceptors.request.use(async (config) => {
+    const token = await getToken()
+    if (token) config.headers.Authorization = `Bearer ${token}`
+    return config
   })
-  return data
-}
 
-export async function deleteImage(imageId: string): Promise<void> {
-  await api.delete(`/images/${imageId}`)
-}
-
-export async function deleteTerm(termId: string): Promise<void> {
-  await api.delete(`/terms/${termId}`)
-}
-
-export async function saveNote(weekKey: string, content: string): Promise<WeekNote> {
-  const { data } = await api.put(`/notes/${weekKey}`, { content })
-  return data
-}
-
-export async function regenerateTerms(imageId: string): Promise<ImageEntry> {
-  const { data } = await api.post(`/images/${imageId}/regenerate`)
-  return data
+  return {
+    async getWeekData(weekKey: string): Promise<WeekData> {
+      const { data } = await authAxios.get(`/weeks/${weekKey}`)
+      return data
+    },
+    async uploadImage(file: File, date: string): Promise<ImageEntry> {
+      const formData = new FormData()
+      formData.append('image', file)
+      formData.append('date', date)
+      const { data } = await authAxios.post('/images', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      return data
+    },
+    async deleteImage(imageId: string): Promise<void> {
+      await authAxios.delete(`/images/${imageId}`)
+    },
+    async deleteTerm(termId: string): Promise<void> {
+      await authAxios.delete(`/terms/${termId}`)
+    },
+    async saveNote(weekKey: string, content: string): Promise<WeekNote> {
+      const { data } = await authAxios.put(`/notes/${weekKey}`, { content })
+      return data
+    },
+    async regenerateTerms(imageId: string): Promise<ImageEntry> {
+      const { data } = await authAxios.post(`/images/${imageId}/regenerate`)
+      return data
+    },
+  }
 }

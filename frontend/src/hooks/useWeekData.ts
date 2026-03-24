@@ -1,18 +1,19 @@
 import { useState, useEffect, useCallback } from 'react'
-import { WeekData, ImageEntry, WeekNote } from '../types'
-import { getWeekData, uploadImage, deleteImage, deleteTerm, saveNote } from '../lib/api'
+import { WeekData, ImageEntry } from '../types'
+import { useApi } from '../lib/api'
 import { getWeekKey } from '../lib/utils'
 
 export function useWeekData(weekKey: string) {
   const [data, setData] = useState<WeekData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const api = useApi()
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
-      const weekData = await getWeekData(weekKey)
+      const weekData = await api.getWeekData(weekKey)
       setData(weekData)
     } catch (e) {
       setError('Failed to load week data')
@@ -43,7 +44,7 @@ export function useWeekData(weekKey: string) {
     setData(prev => prev ? { ...prev, images: [...prev.images, optimistic] } : prev)
 
     try {
-      const newImage = await uploadImage(file, date)
+      const newImage = await api.uploadImage(file, date)
       URL.revokeObjectURL(previewUrl)
       setData(prev => {
         if (!prev) return prev
@@ -55,18 +56,18 @@ export function useWeekData(weekKey: string) {
       setData(prev => prev ? { ...prev, images: prev.images.filter(img => img.id !== tempId) } : prev)
       throw err
     }
-  }, [])
+  }, [api])
 
   const handleDeleteImage = useCallback(async (imageId: string) => {
-    await deleteImage(imageId)
+    await api.deleteImage(imageId)
     setData(prev => {
       if (!prev) return prev
       return { ...prev, images: prev.images.filter(img => img.id !== imageId) }
     })
-  }, [])
+  }, [api])
 
   const handleDeleteTerm = useCallback(async (termId: string, imageId: string) => {
-    await deleteTerm(termId)
+    await api.deleteTerm(termId)
     setData(prev => {
       if (!prev) return prev
       return {
@@ -77,15 +78,15 @@ export function useWeekData(weekKey: string) {
         }),
       }
     })
-  }, [])
+  }, [api])
 
   const handleSaveNote = useCallback(async (content: string) => {
-    const note = await saveNote(weekKey, content)
+    const note = await api.saveNote(weekKey, content)
     setData(prev => {
       if (!prev) return prev
       return { ...prev, note }
     })
-  }, [weekKey])
+  }, [api, weekKey])
 
   return {
     data,

@@ -1,7 +1,8 @@
-import { pgTable, text, varchar, timestamp, real, integer } from 'drizzle-orm/pg-core'
+import { pgTable, text, varchar, timestamp, real, unique } from 'drizzle-orm/pg-core'
 
 export const images = pgTable('images', {
   id: varchar('id', { length: 36 }).primaryKey(),
+  userId: varchar('user_id', { length: 64 }).notNull(),
   date: varchar('date', { length: 10 }).notNull(), // YYYY-MM-DD
   weekKey: varchar('week_key', { length: 10 }).notNull(), // YYYY-Www
   imageUrl: text('image_url').notNull(),
@@ -20,7 +21,10 @@ export const terms = pgTable('terms', {
 
 export const weekNotes = pgTable('week_notes', {
   id: varchar('id', { length: 36 }).primaryKey(),
-  weekKey: varchar('week_key', { length: 10 }).notNull().unique(),
+  userId: varchar('user_id', { length: 64 }).notNull(),
+  weekKey: varchar('week_key', { length: 10 }).notNull(),
   content: text('content').notNull().default(''),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+}, (t) => ({
+  userWeekUnique: unique().on(t.userId, t.weekKey),
+}))

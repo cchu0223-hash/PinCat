@@ -1,34 +1,32 @@
 import { Router } from 'express'
+import { requireAuth, getAuth } from '@clerk/express'
 import { v4 as uuidv4 } from 'uuid'
 import { db } from '../db/index.js'
 import { weekNotes } from '../db/schema.js'
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 
 const router = Router()
 
-router.put('/:weekKey', async (req, res) => {
+router.put('/:weekKey', requireAuth(), async (req, res) => {
   try {
+    const { userId } = getAuth(req)
     const { weekKey } = req.params
     const { content } = req.body
 
-    const rows = await db.select().from(weekNotes).where(eq(weekNotes.weekKey, weekKey)).limit(1)
+    const rows = await db.select().from(weekNotes)
+      .where(and(eq(weekNotes.weekKey, weekKey), eq(weekNotes.userId, userId!)))
+      .limit(1)
     const existing = rows[0] ?? null
 
     if (existing) {
       await db
         .update(weekNotes)
         .set({ content, updatedAt: new Date() })
-        .where(eq(weekNotes.weekKey, weekKey))
-
+        .where(and(eq(weekNotes.weekKey, weekKey), eq(weekNotes.userId, userId!)))
       res.json({ ...existing, content, updatedAt: new Date().toISOString() })
     } else {
       const id = uuidv4()
-      await db.insert(weekNotes).values({
-        id,
-        weekKey,
-        content,
-        updatedAt: new Date(),
-      })
+      await db.insert(weekNotes).values({ id, userId: userId!, weekKey, content, updatedAt: new Date() })
       res.json({ id, weekKey, content, updatedAt: new Date().toISOString() })
     }
   } catch (err) {

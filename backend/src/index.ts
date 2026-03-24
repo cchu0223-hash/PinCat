@@ -1,15 +1,12 @@
 import express from 'express'
 import cors from 'cors'
-import path from 'path'
-import { fileURLToPath } from 'url'
+import { clerkMiddleware } from '@clerk/express'
 import 'dotenv/config'
 
 import imagesRouter from './routes/images.js'
 import termsRouter from './routes/terms.js'
 import weeksRouter from './routes/weeks.js'
 import notesRouter from './routes/notes.js'
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -31,6 +28,7 @@ app.use(cors({
   },
 }))
 app.use(express.json())
+app.use(clerkMiddleware())
 
 // API routes
 app.use('/api/images', imagesRouter)

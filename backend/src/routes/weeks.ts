@@ -1,20 +1,22 @@
 import { Router } from 'express'
+import { requireAuth, getAuth } from '@clerk/express'
 import { db } from '../db/index.js'
 import { images, terms, weekNotes } from '../db/schema.js'
-import { eq, inArray, and, lte, gte } from 'drizzle-orm'
+import { eq, inArray, and } from 'drizzle-orm'
 import { getWeekBounds } from '../lib/weekUtils.js'
 
 const router = Router()
 
-router.get('/:weekKey', async (req, res) => {
+router.get('/:weekKey', requireAuth(), async (req, res) => {
   try {
+    const { userId } = getAuth(req)
     const { weekKey } = req.params
     const { start, end } = getWeekBounds(weekKey)
 
     const weekImages = await db
       .select()
       .from(images)
-      .where(eq(images.weekKey, weekKey))
+      .where(and(eq(images.weekKey, weekKey), eq(images.userId, userId!)))
 
     const imageIds = weekImages.map(img => img.id)
     let allTerms: (typeof terms.$inferSelect)[] = []
@@ -48,7 +50,7 @@ router.get('/:weekKey', async (req, res) => {
     const noteRows = await db
       .select()
       .from(weekNotes)
-      .where(eq(weekNotes.weekKey, weekKey))
+      .where(and(eq(weekNotes.weekKey, weekKey), eq(weekNotes.userId, userId!)))
       .limit(1)
     const note = noteRows[0] ?? null
 

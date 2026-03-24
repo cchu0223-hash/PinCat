@@ -1,11 +1,12 @@
 import { Router } from 'express'
+import { requireAuth } from '@clerk/express'
 import { db } from '../db/index.js'
 import { terms } from '../db/schema.js'
 import { eq } from 'drizzle-orm'
 
 const router = Router()
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAuth(), async (req, res) => {
   try {
     await db.delete(terms).where(eq(terms.id, req.params.id))
     res.json({ success: true })

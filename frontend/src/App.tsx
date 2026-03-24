@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { SignedIn, SignedOut, SignIn, useAuth } from '@clerk/clerk-react'
 import { Navigation } from './components/Navigation'
 import { WeekView } from './components/WeekView'
 import { useWeekData } from './hooks/useWeekData'
@@ -6,7 +7,7 @@ import { useDarkMode } from './hooks/useDarkMode'
 import { getWeekKey } from './lib/utils'
 import { Loader } from 'lucide-react'
 
-function App() {
+function Main() {
   const [weekKey, setWeekKey] = useState(() => getWeekKey(new Date()))
   const { dark, toggle } = useDarkMode()
   const {
@@ -27,7 +28,6 @@ function App() {
         dark={dark}
         onToggleDark={toggle}
       />
-
       <main className="max-w-7xl mx-auto">
         {loading && (
           <div className="flex items-center justify-center py-20">
@@ -52,6 +52,21 @@ function App() {
         )}
       </main>
     </div>
+  )
+}
+
+function App() {
+  return (
+    <>
+      <SignedOut>
+        <div className="min-h-screen flex items-center justify-center bg-warm-bg dark:bg-warm-bgDark">
+          <SignIn />
+        </div>
+      </SignedOut>
+      <SignedIn>
+        <Main />
+      </SignedIn>
+    </>
   )
 }
 
